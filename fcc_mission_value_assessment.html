@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCC Mission Value Assessment - Elastic Observability</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        elasticBlue: '#005577',
+                        elasticTeal: '#00bfb2',
+                        elasticDark: '#111827',
+                        fccBlue: '#1d4ed8',
+                        fccGold: '#d97706',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .slide-transition {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Top Navigation Bar -->
+    <header class="bg-slate-950 border-b border-slate-800 px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50 shadow-md">
+        <div class="flex items-center space-x-3">
+            <!-- FCC Logo SVG representation -->
+            <div class="bg-blue-600 text-white p-2 rounded font-bold text-sm tracking-wider flex items-center justify-center h-10 w-10 shadow-lg">
+                FCC
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white flex items-center">
+                    Observability Business Value Assessment
+                    <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Conservative Model
+                    </span>
+                </h1>
+                <p class="text-xs text-slate-400">Prepared for: <strong class="text-slate-200">Don Tweedy, Deputy CIO</strong> &bull; June 2026</p>
+            </div>
+        </div>
+
+        <!-- Mode Selectors and Quick Actions -->
+        <div class="flex items-center space-x-3">
+            <button onclick="switchView('dashboard')" id="nav-dashboard" class="px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white transition-all shadow-md">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z"></path></svg>
+                <span>Interactive Dashboard</span>
+            </button>
+            <button onclick="switchView('deck')" id="nav-deck" class="px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                <span>Briefing Deck Mode</span>
+            </button>
+            <button onclick="resetDefaults()" class="p-2 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all" title="Reset to Baseline Model Inputs">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H18"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 flex overflow-hidden">
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboard-view" class="flex-1 flex flex-col lg:flex-row overflow-hidden w-full">
+            
+            <!-- LEFT PANEL: Interactive Input Controls -->
+            <aside class="w-full lg:w-80 bg-slate-950 border-r border-slate-800 flex flex-col h-full overflow-y-auto">
+                <div class="p-5 border-b border-slate-800 bg-slate-950/50 sticky top-0 z-10 backdrop-blur">
+                    <h3 class="font-bold text-white text-sm uppercase tracking-wider flex items-center justify-between">
+                        <span>Model Assumptions</span>
+                        <span class="text-xs lowercase text-slate-400 font-normal">adjust sliders to live-calculate</span>
+                    </h3>
+                    
+                    <!-- Presets Selector -->
+                    <div class="mt-3">
+                        <label class="text-xs text-slate-400 font-medium block mb-1">Scenario Presets</label>
+                        <select id="scenarioPreset" onchange="applyPreset(this.value)" class="w-full bg-slate-800 border border-slate-700 text-white rounded px-2 py-1.5 text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                            <option value="conservative">Conservative Model (Current Case)</option>
+                            <option value="pessimistic">Pessimistic Scenario (Half Impact)</option>
+                            <option value="cisco">Forrester-Aligned (Cisco FSO 65%)</option>
+                            <option value="elastic">Forrester-Aligned (Elastic TEI 85%)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="p-5 space-y-6 flex-1">
+                    
+                    <!-- Section: Current Outage Stats -->
+                    <div class="space-y-4">
+                        <h4 class="text-xs font-semibold text-sky-400 uppercase tracking-wider border-b border-slate-800 pb-1">Outage & Response Stats</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">P1/P2 Outages / Year</span>
+                                <span class="font-bold text-white" id="val-outagesPerYear">24</span>
+                            </div>
+                            <input type="range" id="input-outagesPerYear" min="5" max="60" value="24" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Contractors per War Room</span>
+                                <span class="font-bold text-white" id="val-contractorsPerOutage">22</span>
+                            </div>
+                            <input type="range" id="input-contractorsPerOutage" min="5" max="50" value="22" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Avg Outage Duration (hrs)</span>
+                                <span class="font-bold text-white" id="val-outageDurationHrs">6.0</span>
+                            </div>
+                            <input type="range" id="input-outageDurationHrs" min="1" max="15" step="0.5" value="6" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Outage Cost/Hr (Mission)</span>
+                                <span class="font-bold text-white" id="val-missionOutageCostHr">$75,000</span>
+                            </div>
+                            <input type="range" id="input-missionOutageCostHr" min="10000" max="250000" step="5000" value="75000" oninput="updateModel()" class="w-full accent-blue-500">
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Commercial benchmark is $330K/hr (Gartner)</span>
+                        </div>
+                    </div>
+
+                    <!-- Section: Alerts & Triage -->
+                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-semibold text-sky-400 uppercase tracking-wider border-b border-slate-800 pb-1">Alert Noise & Labor</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Daily False Alerts</span>
+                                <span class="font-bold text-white" id="val-dailyFalsePositives">80</span>
+                            </div>
+                            <input type="range" id="input-dailyFalsePositives" min="10" max="250" value="80" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Minutes to Triage 1 Alert</span>
+                                <span class="font-bold text-white" id="val-minutesPerFP">25</span>
+                            </div>
+                            <input type="range" id="input-minutesPerFP" min="5" max="60" value="25" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Contractor Hourly Rate</span>
+                                <span class="font-bold text-white" id="val-loadedHourlyRate">$125</span>
+                            </div>
+                            <input type="range" id="input-loadedHourlyRate" min="75" max="250" value="125" oninput="updateModel()" class="w-full accent-blue-500">
+                            <span class="text-[10px] text-slate-400 block mt-0.5">Federal IT Contractor range $82-$166</span>
+                        </div>
+                    </div>
+
+                    <!-- Section: Current Tool Spend -->
+                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-semibold text-sky-400 uppercase tracking-wider border-b border-slate-800 pb-1">Current Tool Spend</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Splunk Ingest/Licensing</span>
+                                <span class="font-bold text-white" id="val-spendSplunk">$2,500K</span>
+                            </div>
+                            <input type="range" id="input-spendSplunk" min="500" max="5000" step="100" value="2500" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Tanium Endpoint (Overlap)</span>
+                                <span class="font-bold text-white" id="val-spendTanium">$1,400K</span>
+                            </div>
+                            <input type="range" id="input-spendTanium" min="200" max="3000" step="100" value="1400" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Dynatrace APM</span>
+                                <span class="font-bold text-white" id="val-spendDynatrace">$512K</span>
+                            </div>
+                            <input type="range" id="input-spendDynatrace" min="100" max="1500" step="50" value="512" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">SolarWinds Networking</span>
+                                <span class="font-bold text-white" id="val-spendSolarWinds">$25K</span>
+                            </div>
+                            <input type="range" id="input-spendSolarWinds" min="5" max="100" step="5" value="25" oninput="updateModel()" class="w-full accent-blue-500">
+                        </div>
+                    </div>
+
+                    <!-- Section: Elastic Licensing & Services -->
+                    <div class="space-y-4 pt-4 border-t border-slate-800">
+                        <h4 class="text-xs font-semibold text-emerald-400 uppercase tracking-wider border-b border-slate-800 pb-1">Proposed Elastic Investment</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Yr 1 Subscription</span>
+                                <span class="font-bold text-white" id="val-elasticLicenseYr1">$750K</span>
+                            </div>
+                            <input type="range" id="input-elasticLicenseYr1" min="300" max="1500" step="50" value="750" oninput="updateModel()" class="w-full accent-emerald-500">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Yr 1 One-Time Services</span>
+                                <span class="font-bold text-white" id="val-elasticServicesYr1">$200K</span>
+                            </div>
+                            <input type="range" id="input-elasticServicesYr1" min="50" max="500" step="25" value="200" oninput="updateModel()" class="w-full accent-emerald-500">
+                        </div>
+                    </div>
+
+                </div>
+            </aside>
+
+            <!-- RIGHT PANEL: Dashboard Metrics, Charts & Simulator -->
+            <section class="flex-1 flex flex-col overflow-y-auto bg-slate-900 p-6 space-y-6">
+                
+                <!-- Quick Metric Header Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-blue-500/50 transition-all">
+                        <div class="absolute top-0 right-0 p-3 text-blue-500/20 group-hover:text-blue-500/30 transition-all">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">3-Year Net Benefit</span>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white tracking-tight" id="metric-netBenefit">$25.77M</h2>
+                        <span class="text-xs text-emerald-400 font-medium flex items-center mt-1">
+                            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span>
+                            Cumulative Returns
+                        </span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-500/50 transition-all">
+                        <div class="absolute top-0 right-0 p-3 text-emerald-500/20 group-hover:text-emerald-500/30 transition-all">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        </div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">3-Year Return on Investment</span>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-emerald-400 tracking-tight" id="metric-roi">1,024%</h2>
+                        <span class="text-xs text-slate-400 block mt-1">Industry-standard formula</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-amber-500/50 transition-all">
+                        <div class="absolute top-0 right-0 p-3 text-amber-500/20 group-hover:text-amber-500/30 transition-all">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        </div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">Payback Period</span>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-amber-400 tracking-tight" id="metric-payback">1.7 Months</h2>
+                        <span class="text-xs text-slate-400 block mt-1">First year break-even point</span>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-slate-950 to-slate-900 border border-slate-800 rounded-xl p-5 shadow-sm relative overflow-hidden group hover:border-purple-500/50 transition-all">
+                        <div class="absolute top-0 right-0 p-3 text-purple-500/20 group-hover:text-purple-500/30 transition-all">
+                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        </div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">Benefit-Cost Ratio</span>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-purple-400 tracking-tight" id="metric-bcr">11.2x</h2>
+                        <span class="text-xs text-slate-400 block mt-1">Dollars returned per $1 invested</span>
+                    </div>
+                </div>
+
+                <!-- Dashboard Tab Menu -->
+                <div class="flex border-b border-slate-800">
+                    <button onclick="switchTab('tab-financial')" id="btn-tab-financial" class="px-5 py-3 text-sm font-semibold border-b-2 border-blue-500 text-blue-400 focus:outline-none flex items-center space-x-2">
+                        <span>Financial Analysis</span>
+                    </button>
+                    <button onclick="switchTab('tab-drivers')" id="btn-tab-drivers" class="px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white focus:outline-none flex items-center space-x-2">
+                        <span>The 4 Value Drivers</span>
+                    </button>
+                    <button onclick="switchTab('tab-simulator')" id="btn-tab-simulator" class="px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white focus:outline-none flex items-center space-x-2">
+                        <span class="flex h-2 w-2 rounded-full bg-red-500 animate-pulse mr-1"></span>
+                        <span>Outage Mission Simulator</span>
+                    </button>
+                    <button onclick="switchTab('tab-operational')" id="btn-tab-operational" class="px-5 py-3 text-sm font-semibold border-b-2 border-transparent text-slate-400 hover:text-white focus:outline-none flex items-center space-x-2">
+                        <span>Operational Metrics</span>
+                    </button>
+                </div>
+
+                <!-- TAB CONTAINER: Financial Analysis -->
+                <div id="tab-financial" class="space-y-6 tab-content">
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <!-- Chart: Benefits vs. Cost -->
+                        <div class="xl:col-span-2 bg-slate-950 border border-slate-800 rounded-xl p-5 shadow">
+                            <h3 class="font-bold text-white text-base mb-4 flex items-center">
+                                <span class="bg-blue-600/20 text-blue-400 p-1.5 rounded mr-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                                </span>
+                                Elastic Observability 3-Year TCO & Benefit Comparison
+                            </h3>
+                            <div class="relative h-80 w-full">
+                                <canvas id="chart-financials"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Driver Breakdown Pizza chart -->
+                        <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow">
+                            <h3 class="font-bold text-white text-base mb-4 flex items-center">
+                                <span class="bg-purple-600/20 text-purple-400 p-1.5 rounded mr-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                                </span>
+                                Contribution of Benefits
+                            </h3>
+                            <div class="relative h-64 w-full flex items-center justify-center">
+                                <canvas id="chart-pie-drivers"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Summary Table -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl overflow-hidden shadow">
+                        <div class="p-5 border-b border-slate-800 flex justify-between items-center">
+                            <h3 class="font-bold text-white text-base">3-Year Investment and Return Ledger</h3>
+                            <span class="text-xs text-slate-400">All numbers in US Dollars</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-900 text-slate-300 font-semibold border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-4">Business Category / Driver</th>
+                                        <th class="p-4 text-right">Year 1</th>
+                                        <th class="p-4 text-right">Year 2</th>
+                                        <th class="p-4 text-right">Year 3</th>
+                                        <th class="p-4 text-right text-sky-400">3-Yr Cumulative</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800" id="financial-ledger-body">
+                                    <!-- Dynamic rows from script -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTAINER: 4 Value Drivers -->
+                <div id="tab-drivers" class="grid grid-cols-1 md:grid-cols-2 gap-6 tab-content hidden">
+                    
+                    <!-- Driver 1: Tool Consolidation -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow hover:border-blue-500/30 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="bg-blue-600/20 text-blue-400 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Driver 1: Tool Consolidation</span>
+                                <span class="text-xs font-bold text-emerald-400" id="driver1-badge">$7.54M Saved</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-white mb-2"> telemetry Simplification</h4>
+                            <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                                Retires duplicate logging, metrics, and APM. Consolidates Dynatrace, Splunk, SolarWinds, and Tanium telemetry onto a single unified platform. 
+                                Forrester TEI shows Elastic saves up to 85% of telemetry expense; we conservatively model a ramp to 65% in Year 3.
+                            </p>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800 mt-2">
+                            <h5 class="text-xs font-bold text-slate-400 mb-2 uppercase">Illustrative Year 3 Retirement Roadmap</h5>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span>Splunk (Logs / SIEM Consolidation)</span>
+                                    <span class="font-semibold text-white" id="val-driver1-splunk">$2,125,000</span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span>Dynatrace (APM Retirement)</span>
+                                    <span class="font-semibold text-white" id="val-driver1-dynatrace">$358,400</span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs">
+                                    <span>Tanium Overlap (Partial Savings)</span>
+                                    <span class="font-semibold text-white" id="val-driver1-tanium">$420,000</span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs border-t border-slate-800 pt-1">
+                                    <span>SolarWinds (Network Telemetry)</span>
+                                    <span class="font-semibold text-white" id="val-driver1-solarwinds">$20,000</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 2: MTTR / MTTD Labor Savings -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow hover:border-purple-500/30 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="bg-purple-600/20 text-purple-400 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Driver 2: MTTR / MTTD Labor Savings</span>
+                                <span class="text-xs font-bold text-emerald-400" id="driver2-badge">$808K Saved</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-white mb-2">Outage War Room Staff Optimization</h4>
+                            <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                                High-priority incidents pull dozens of expensive contractor resources from other core mission objectives.
+                                By creating shared context, Elastic reduces the number of contractors required on bridge calls (from 22 to 13) and accelerates detection & repair time by up to 50% in Year 3.
+                            </p>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                            <h5 class="text-xs font-bold text-slate-400 mb-2 uppercase">Mean-Time-To-Resolution (MTTR) Evolution</h5>
+                            <div class="grid grid-cols-2 gap-4 mt-1">
+                                <div class="border-r border-slate-800 pr-2">
+                                    <span class="text-[10px] text-slate-400 block uppercase font-bold">War Room Headcount</span>
+                                    <div class="flex items-end space-x-2 mt-1">
+                                        <span class="text-xs text-red-400 line-through" id="val-driver2-headcount-now">22</span>
+                                        <span class="text-sm font-bold text-white">&rarr;</span>
+                                        <span class="text-base font-bold text-emerald-400" id="val-driver2-headcount-future">13</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block uppercase font-bold">Resolution Duration</span>
+                                    <div class="flex items-end space-x-2 mt-1">
+                                        <span class="text-xs text-red-400 line-through" id="val-driver2-duration-now">6 hrs</span>
+                                        <span class="text-sm font-bold text-white">&rarr;</span>
+                                        <span class="text-base font-bold text-emerald-400" id="val-driver2-duration-future">3 hrs</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 3: False Positive Alert Reduction -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow hover:border-amber-500/30 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="bg-amber-600/20 text-amber-400 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Driver 3: Alert Suppression</span>
+                                <span class="text-xs font-bold text-emerald-400" id="driver3-badge">$4.66M Value</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-white mb-2">Eliminating Alert Fatigue</h4>
+                            <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                                Analysts lose up to 25% of their working days hunting down false-positive telemetry alerts. 
+                                Following PBGC's success (dropping false alarms from 80 to 20 daily), we model a 75% noise reduction. 
+                                Reclaimed hours are directed back to high-impact engineering work (modeled as direct labor recovery and high-value mission output).
+                            </p>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                            <h5 class="text-xs font-bold text-slate-400 mb-2 uppercase">Analyst Workload Transformation</h5>
+                            <div class="space-y-2 text-xs">
+                                <div class="flex justify-between">
+                                    <span>Analyst hours saved / year</span>
+                                    <strong class="text-white" id="val-driver3-hours">9,125 hours</strong>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Direct dollar recovery (Year 3)</span>
+                                    <strong class="text-emerald-400" id="val-driver3-direct">$1,140,625</strong>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span>Mission-directed productivity value</span>
+                                    <strong class="text-blue-400" id="val-driver3-uplift">$798,438</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Driver 4: Mission Impact / Outage Avoidance -->
+                    <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow hover:border-rose-500/30 transition-all flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <span class="bg-rose-600/20 text-rose-400 text-xs font-bold px-3 py-1.5 rounded-full uppercase tracking-wider">Driver 4: Outage Avoidance</span>
+                                <span class="text-xs font-bold text-emerald-400" id="driver4-badge">$15.28M Saved</span>
+                            </div>
+                            <h4 class="text-lg font-bold text-white mb-2">Proactive Outage Avoidance</h4>
+                            <p class="text-sm text-slate-300 mb-4 leading-relaxed">
+                                The ultimate benefit of observability is preventing downtime before it starts.
+                                Machine Learning anomaly detection flags degradations early, letting engineering intercept and avoid outages. 
+                                We model a conservative 20% prevention rate alongside accelerated recovery on unavoidable occurrences.
+                            </p>
+                        </div>
+                        <div class="bg-slate-900/50 p-4 rounded-lg border border-slate-800">
+                            <h5 class="text-xs font-bold text-slate-400 mb-2 uppercase">Outage Prevention Output</h5>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="border-r border-slate-800 pr-2 text-xs">
+                                    <span class="text-[10px] text-slate-400 block uppercase">Prevented Incidents / Yr</span>
+                                    <strong class="text-base text-rose-400 mt-1 block" id="val-driver4-avoided">4.8 incidents</strong>
+                                </div>
+                                <div class="text-xs">
+                                    <span class="text-[10px] text-slate-400 block uppercase">Total Mission Hours Saved</span>
+                                    <strong class="text-base text-emerald-400 mt-1 block" id="val-driver4-hours-saved">86.4 hrs</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- TAB CONTAINER: Outage Simulator -->
+                <div id="tab-simulator" class="bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-lg tab-content hidden">
+                    <div class="mb-5">
+                        <h3 class="text-xl font-extrabold text-white flex items-center">
+                            <span class="relative flex h-3 w-3 mr-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                            </span>
+                            FCC Critical Systems & Incident Simulator
+                        </h3>
+                        <p class="text-sm text-slate-400 mt-1">Select an FCC system and execute a simulated major (P1) outage to compare "Current Fragmented State" resolution versus "Elastic Unified Observability."</p>
+                    </div>
+
+                    <!-- System Grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6" id="simulator-systems-grid">
+                        <!-- Spectrum Auctions -->
+                        <button onclick="selectSimSystem('auctions')" id="btn-sim-auctions" class="p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent">
+                            <div class="text-blue-400 text-xl font-bold mb-1">$$$</div>
+                            <div class="font-bold text-xs text-white">Spectrum Auctions</div>
+                            <div class="text-[10px] text-slate-400 mt-1">SMRA Auction Platform</div>
+                        </button>
+                        
+                        <!-- ULS -->
+                        <button onclick="selectSimSystem('uls')" id="btn-sim-uls" class="p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent">
+                            <div class="text-emerald-400 text-xl font-bold mb-1">5G</div>
+                            <div class="font-bold text-xs text-white">ULS Licensure</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Wireless Radio Licensing</div>
+                        </button>
+
+                        <!-- Public Safety NORS/DIRS -->
+                        <button onclick="selectSimSystem('nors')" id="btn-sim-nors" class="p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent">
+                            <div class="text-red-400 text-xl font-bold mb-1">🚨</div>
+                            <div class="font-bold text-xs text-white">NORS & DIRS</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Public Safety Outages</div>
+                        </button>
+
+                        <!-- Space/Satellite IBFS -->
+                        <button onclick="selectSimSystem('ibfs')" id="btn-sim-ibfs" class="p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent">
+                            <div class="text-indigo-400 text-xl font-bold mb-1">🛰️</div>
+                            <div class="font-bold text-xs text-white">IBFS / Satellite</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Broadband Authorizations</div>
+                        </button>
+
+                        <!-- ECFS Comments -->
+                        <button onclick="selectSimSystem('ecfs')" id="btn-sim-ecfs" class="p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent">
+                            <div class="text-amber-400 text-xl font-bold mb-1">💬</div>
+                            <div class="font-bold text-xs text-white">ECFS Rulemaking</div>
+                            <div class="text-[10px] text-slate-400 mt-1">Public Docket Filing</div>
+                        </button>
+                    </div>
+
+                    <!-- Output Area for Simulation -->
+                    <div id="simulation-output" class="hidden bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                        <div class="bg-slate-950 p-4 border-b border-slate-800 flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <span class="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse"></span>
+                                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Incident Report:</span>
+                                <strong class="text-sm text-white" id="sim-active-title">None</strong>
+                            </div>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20" id="sim-active-severity">P1 Major</span>
+                        </div>
+
+                        <!-- System Description & Impact Details -->
+                        <div class="p-5 border-b border-slate-800 bg-slate-900/30 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <h4 class="text-xs font-bold uppercase text-slate-400">Mission Consequence</h4>
+                                <p class="text-sm text-white mt-1 leading-relaxed" id="sim-active-desc">-</p>
+                            </div>
+                            <div class="bg-red-950/20 p-3 rounded-lg border border-red-500/10 flex flex-col justify-center">
+                                <h4 class="text-xs font-bold uppercase text-red-400">Mission Operational Threat</h4>
+                                <p class="text-xs text-slate-300 mt-1 leading-relaxed" id="sim-active-consequence">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Timeline & Comparison Grid -->
+                        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-800">
+                            
+                            <!-- Left: Current State Chaos -->
+                            <div class="p-5 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-red-400 text-sm flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                        Current Status Quo (Siloed Diagnostics)
+                                    </h4>
+                                    <span class="text-xs text-slate-500">Dynatrace + Splunk + SolarWinds</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>Siloed Mean-Time-To-Detect (MTTD)</span>
+                                            <span class="text-red-400" id="sim-current-mttd">1.5 hrs</span>
+                                        </div>
+                                        <p class="text-slate-400">SolarWinds fires warning, Splunk receives ingest bursts, Dynatrace remains green due to incomplete APM instrumentation. Core teams try to align dashboards manually.</p>
+                                    </div>
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>War Room Chaos Headcount</span>
+                                            <span class="text-red-400" id="sim-current-contractors">22 contractors</span>
+                                        </div>
+                                        <p class="text-slate-400">Contractors from infrastructure, networking, and security teams are dialed in. Fragmented hand-offs and finger-pointing prolong diagnostics.</p>
+                                    </div>
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>Full Repair Bridge MTTR</span>
+                                            <span class="text-red-400" id="sim-current-mttr">6.0 hrs</span>
+                                        </div>
+                                        <p class="text-slate-400">Total downtime results in extended mission interruption. Remediation is slow and depends heavily on manual troubleshooting.</p>
+                                    </div>
+                                    <div class="bg-red-950/30 p-4 rounded-lg border border-red-500/20 flex justify-between items-center">
+                                        <span class="text-xs font-bold text-red-400 uppercase">Estimated Loss / Outage</span>
+                                        <strong class="text-lg font-extrabold text-red-400" id="sim-current-loss">$450,000</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Elastic Observability -->
+                            <div class="p-5 space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h4 class="font-bold text-emerald-400 text-sm flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Elastic Observability (Unified Core)
+                                    </h4>
+                                    <span class="text-xs text-emerald-500 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">Year 3 Steady-State</span>
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>Integrated MTTD</span>
+                                            <span class="text-emerald-400" id="sim-elastic-mttd">0.5 hrs</span>
+                                        </div>
+                                        <p class="text-slate-400">Machine learning anomaly models flag correlation indicators across all logs, metrics, and network captures immediately, indicating root cause.</p>
+                                    </div>
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>Unified Engineering Team</span>
+                                            <span class="text-emerald-400" id="sim-elastic-contractors">13.2 contractors</span>
+                                        </div>
+                                        <p class="text-slate-400">Single pane of glass replaces silo-specific personnel on incident bridges. Less overhead means faster coordination without redundant resources.</p>
+                                    </div>
+                                    <div class="bg-slate-950 p-3 rounded border border-slate-800 text-xs">
+                                        <div class="flex justify-between font-bold text-slate-300 mb-1">
+                                            <span>Resolved MTTR</span>
+                                            <span class="text-emerald-400" id="sim-elastic-mttr">3.0 hrs</span>
+                                        </div>
+                                        <p class="text-slate-400">Instant anomaly pinpoints and unified runbook execution shorten repair time to half, allowing rapid mission restoration.</p>
+                                    </div>
+                                    <div class="bg-emerald-950/30 p-4 rounded-lg border border-emerald-500/20 flex justify-between items-center">
+                                        <div class="flex flex-col">
+                                            <span class="text-xs font-bold text-emerald-400 uppercase">Elastic Mission Loss</span>
+                                            <span class="text-[10px] text-emerald-500" id="sim-elastic-savings-note">Savings: $225K</span>
+                                        </div>
+                                        <strong class="text-lg font-extrabold text-emerald-400" id="sim-elastic-loss">$225,000</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB CONTAINER: Operational Metrics -->
+                <div id="tab-operational" class="bg-slate-950 border border-slate-800 rounded-xl p-5 shadow tab-content hidden">
+                    <h3 class="font-bold text-white text-base mb-4 flex items-center">
+                        <span class="bg-sky-600/20 text-sky-400 p-1.5 rounded mr-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        </span>
+                        Day-to-Day Operational Metrics (Beyond Dollars)
+                    </h3>
+                    <p class="text-sm text-slate-400 mb-6">How Elastic Unified Observability transforms day-to-day operations for FCC operators and technical teams.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Alert Fatigue Reduction</span>
+                            <div class="my-4">
+                                <span class="text-3xl font-extrabold text-amber-400" id="val-ops-alerts-reduct">75%</span>
+                                <span class="text-xs block text-slate-400 mt-1">Noise reduction</span>
+                            </div>
+                            <div class="text-xs text-slate-300">
+                                Down to <strong id="val-ops-alerts-day">20</strong> false-positive alerts/day from <strong id="val-ops-alerts-prev">80</strong>.
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">MTTR SLA Shrinkage</span>
+                            <div class="my-4">
+                                <span class="text-3xl font-extrabold text-rose-400" id="val-ops-mttr-reduct">50%</span>
+                                <span class="text-xs block text-slate-400 mt-1">Faster restoration</span>
+                            </div>
+                            <div class="text-xs text-slate-300">
+                                Average downtime drop from <strong id="val-ops-mttr-now">6.0 hrs</strong> to <strong id="val-ops-mttr-future">3.0 hrs</strong>.
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-center">
+                            <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Bridge Call Engineering Efficiency</span>
+                            <div class="my-4">
+                                <span class="text-3xl font-extrabold text-blue-400" id="val-ops-labor-reduct">40%</span>
+                                <span class="text-xs block text-slate-400 mt-1">Fewer bridges & contractors</span>
+                            </div>
+                            <div class="text-xs text-slate-300">
+                                Reduces bridging from <strong id="val-ops-contractors-now">22</strong> to <strong id="val-ops-contractors-future">13</strong> people.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alignment Table -->
+                    <div class="mt-6 border-t border-slate-800 pt-6">
+                        <h4 class="text-sm font-semibold text-white mb-3">Alignment to FCC Strategic Goals</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div class="bg-slate-900 p-3.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-blue-400 block mb-1">Accelerating High-Speed Internet Builds</span>
+                                <p class="text-slate-300">Keep licensing systems online so spectrum assignments and regulatory dockets don't bottleneck nationwide broadband projects, satellite, or direct-to-cell deployment.</p>
+                            </div>
+                            <div class="bg-slate-900 p-3.5 rounded-lg border border-slate-800/80">
+                                <span class="font-bold text-emerald-400 block mb-1">Promoting National Security & Public Safety</span>
+                                <p class="text-slate-300">Protect the critical alert pipelines like NORS, DIRS, and ETRS that emergency management authorities, first responders, and DHS rely on to coordinate disasters.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+
+        <!-- BRIEFING DECK VIEW (PRESENTATION MODE) -->
+        <div id="deck-view" class="flex-1 hidden bg-slate-950 flex flex-col items-center justify-center p-6 select-none relative overflow-hidden">
+            
+            <!-- Presentation Canvas Frame -->
+            <div class="w-full max-w-5xl aspect-[16/9] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-8 flex flex-col justify-between relative slide-transition overflow-hidden">
+                
+                <!-- Background visual grid decorations -->
+                <div class="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent pointer-events-none"></div>
+                
+                <!-- Slide Header -->
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3 z-10 relative">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-white text-xs font-bold bg-blue-600 px-2 py-1 rounded">FCC</span>
+                        <span class="text-xs text-slate-400 font-bold" id="deck-slide-tracker">Slide 1 / 12</span>
+                    </div>
+                    <span class="text-xs text-slate-500 font-bold tracking-widest uppercase">Elastic Observability</span>
+                </div>
+
+                <!-- Slide Content Container (Dynamic injection) -->
+                <div class="flex-1 flex items-center justify-center py-6 z-10 relative text-left" id="deck-slide-content">
+                    <!-- Dynamic slide markup goes here -->
+                </div>
+
+                <!-- Slide Footer Controls -->
+                <div class="flex items-center justify-between border-t border-slate-800 pt-4 z-10 relative">
+                    <span class="text-xs text-slate-500">&copy; Elastic 2026 | FCC Business Value Assessment | Confidential</span>
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="changeSlide(-1)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-white font-bold rounded-lg text-xs transition-colors focus:outline-none flex items-center space-x-1">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                            <span>Prev</span>
+                        </button>
+                        <button onclick="changeSlide(1)" class="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:scale-95 text-white font-bold rounded-lg text-xs transition-all focus:outline-none flex items-center space-x-1 shadow-md">
+                            <span>Next</span>
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Presenter Helper Bar -->
+            <div class="mt-4 flex space-x-4 text-xs text-slate-400">
+                <span>Use left/right arrows, or spacebar on your keyboard to navigate.</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Interactive script containing all models and visual triggers -->
+    <script>
+        // Global variables representing initial baseline states
+        const defaults = {
+            outagesPerYear: 24,
+            contractorsPerOutage: 22,
+            outageDurationHrs: 6.0,
+            missionOutageCostHr: 75000,
+            dailyFalsePositives: 80,
+            minutesPerFP: 25,
+            loadedHourlyRate: 125,
+            spendSplunk: 2500,     // represented in Thousands ($2,500K)
+            spendTanium: 1400,     // partial endpoint overlap
+            spendDynatrace: 512,
+            spendSolarWinds: 25,
+            elasticLicenseYr1: 750,
+            elasticServicesYr1: 200
+        };
+
+        // Live state mirroring defaults initially
+        let state = JSON.parse(JSON.stringify(defaults));
+
+        // Selected simulator system
+        let selectedSystemId = 'auctions';
+
+        // Current slide index for Briefing Deck
+        let currentSlideIndex = 0;
+
+        // FCC Systems Directory
+        const fccSystems = {
+            auctions: {
+                title: "Spectrum Auctions (SMRA System)",
+                desc: "Electronic Simultaneous Multiple Round Auction platform. High-frequency bidder activity.",
+                consequence: "Outages block bidding rounds, eroding multi-billion dollar federal revenues and delaying auction timelines. Can force round resets and damage commercial carrier trust."
+            },
+            uls: {
+                title: "ULS (Universal Licensing System)",
+                desc: "All wireless and broadcast spectrum licensing transactions.",
+                consequence: "Outages prevent carriers and amateur radio users from modifying or registering spectrum licenses. Directly bottlenecks nationwide cellular and public safety broadband rollouts."
+            },
+            nors: {
+                title: "NORS & DIRS (Emergency Communications)",
+                desc: "Network Outage Reporting and Disaster Information Systems.",
+                consequence: "Federal, State, and DHS partners lose mission visibility into regional network collapses. Severe national security risk when coordinate backup channels fail during crises."
+            },
+            ibfs: {
+                title: "IBFS (International Bureau Filing System)",
+                desc: "Filing system for satellite launch, ground, and Section 214 authorizations.",
+                consequence: "Delays critical satellite internet configurations and direct-to-cell orbit applications, impacting global commercial supply-chain security checks."
+            },
+            ecfs: {
+                title: "ECFS (Electronic Comment Filing System)",
+                desc: "Public administrative docket feedback repository.",
+                consequence: "Outages shut out public and industry feedback on active rulemakings, violating statutory docket requirements and slowing agency action."
+            }
+        };
+
+        // Slide contents representing slide layouts in slide mode
+        const slides = [
+            {
+                // Slide 1: Cover
+                render: () => `
+                    <div class="text-center max-w-2xl px-4">
+                        <span class="text-emerald-400 font-bold tracking-widest text-xs uppercase bg-emerald-500/10 px-3 py-1.5 rounded border border-emerald-500/20">Executive Briefing</span>
+                        <h1 class="text-4xl font-extrabold text-white tracking-tight mt-4 leading-tight">
+                            FCC Observability Business Value Assessment
+                        </h1>
+                        <p class="text-lg text-slate-300 mt-3 font-normal max-w-xl mx-auto leading-relaxed">
+                            A conservative 3-year Total Cost of Ownership (TCO) &amp; Return on Investment (ROI) model for consolidated, unified telemetry operations.
+                        </p>
+                        <div class="mt-8 pt-6 border-t border-slate-800 flex justify-center space-x-8 text-sm text-slate-400">
+                            <div>
+                                <span class="block text-slate-500 text-[10px] font-bold uppercase">Prepared for</span>
+                                <strong class="text-slate-200">Don Tweedy, Deputy CIO</strong>
+                            </div>
+                            <div>
+                                <span class="block text-slate-500 text-[10px] font-bold uppercase">Prepared by</span>
+                                <strong class="text-slate-200">Elastic Federal Teams</strong>
+                            </div>
+                            <div>
+                                <span class="block text-slate-500 text-[10px] font-bold uppercase">Date</span>
+                                <strong class="text-slate-200">June 2026</strong>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 2: Executive Summary
+                render: () => `
+                    <div class="w-full h-full flex flex-col justify-center">
+                        <div class="text-center mb-6">
+                            <h2 class="text-3xl font-extrabold text-white">Executive Value Opportunity</h2>
+                            <p class="text-sm text-slate-300 mt-1">Replacing fragmented telemetry with Elastic delivers massive strategic and financial benefits.</p>
+                        </div>
+                        <div class="grid grid-cols-4 gap-4 max-w-4xl mx-auto w-full">
+                            <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 font-bold block mb-1">3-Year Net Benefit</span>
+                                <span class="text-3xl font-extrabold text-white block" id="deck-net">$${formatMillions(outputs.netBenefit)}</span>
+                                <span class="text-[10px] text-emerald-400 font-medium block mt-1">Direct Profitability</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 font-bold block mb-1">Return on Investment</span>
+                                <span class="text-3xl font-extrabold text-emerald-400 block" id="deck-roi">${formatPct(outputs.roi)}</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">3-Yr ROI</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 font-bold block mb-1">Payback Period</span>
+                                <span class="text-3xl font-extrabold text-amber-400 block" id="deck-payback">${outputs.paybackPeriod.toFixed(1)} Mo</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Break-even milestone</span>
+                            </div>
+                            <div class="bg-slate-950/60 p-5 rounded-xl border border-slate-800 text-center">
+                                <span class="text-[10px] text-slate-400 font-bold block mb-1">Benefit-Cost Ratio</span>
+                                <span class="text-3xl font-extrabold text-purple-400 block" id="deck-bcr">${outputs.benefitCostRatio.toFixed(1)}x</span>
+                                <span class="text-[10px] text-slate-400 block mt-1">Value-invest coefficient</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-center text-slate-400 mt-6 leading-relaxed max-w-2xl mx-auto">
+                            Consolidating Dynatrace, Splunk, SolarWinds, and Tanium telemetry onto a single FedRAMP-aligned platform streamlines operations, suppresses alert noise, and protects critical spectrum and safety dockets.
+                        </p>
+                    </div>
+                `
+            },
+            {
+                // Slide 3: The Problem
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-4">
+                            <span class="text-red-400 font-bold tracking-wider text-xs uppercase">Current State Deficiencies</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Fragmented Tool Sprawl Degrades FCC Core Mission</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Maintaining separate telemetry silos (Splunk, Dynatrace, SolarWinds, Tanium) triggers duplicate data intake, extensive war room finger-pointing, and excessive operational waste.
+                            </p>
+                            <div class="p-3.5 bg-red-950/10 border border-red-500/15 rounded-lg text-xs text-red-300">
+                                <strong>Critical Danger:</strong> Public safety outages across cellular tracking networks are prolonged by disconnected diagnostics.
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 w-full grid grid-cols-2 gap-3 mt-4 md:mt-0">
+                            <div class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 text-center">
+                                <span class="text-2xl font-bold text-white">$${formatMillions(state.spendSplunk * 1000 + state.spendDynatrace * 1000 + state.spendSolarWinds * 1000 + state.spendTanium * 1000)}</span>
+                                <span class="block text-[10px] text-slate-400 mt-1 uppercase">Annual Legacy Spend</span>
+                            </div>
+                            <div class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 text-center">
+                                <span class="text-2xl font-bold text-white">${state.outagesPerYear}</span>
+                                <span class="block text-[10px] text-slate-400 mt-1 uppercase">Incidents / Year</span>
+                            </div>
+                            <div class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 text-center">
+                                <span class="text-2xl font-bold text-white">${state.contractorsPerOutage}</span>
+                                <span class="block text-[10px] text-slate-400 mt-1 uppercase">War Room contractors</span>
+                            </div>
+                            <div class="bg-slate-950/40 p-4 rounded-lg border border-slate-800 text-center">
+                                <span class="text-2xl font-bold text-white">${state.dailyFalsePositives}</span>
+                                <span class="block text-[10px] text-slate-400 mt-1 uppercase">Daily False Alerts</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 4: Proposed Unified Observability
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 w-full flex justify-center">
+                            <!-- Visual Graphic of Consolidation -->
+                            <div class="relative w-72 h-44 bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between overflow-hidden shadow">
+                                <div class="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-slate-400">Telemetry Silos</span>
+                                    <span class="text-emerald-400 font-bold">&rarr; Unified</span>
+                                </div>
+                                <div class="grid grid-cols-4 gap-2 text-center text-[10px]">
+                                    <div class="bg-slate-850 p-1 border border-slate-700 rounded text-slate-400 line-through">Splunk</div>
+                                    <div class="bg-slate-850 p-1 border border-slate-700 rounded text-slate-400 line-through">Dynatrace</div>
+                                    <div class="bg-slate-850 p-1 border border-slate-700 rounded text-slate-400 line-through">SolarWinds</div>
+                                    <div class="bg-slate-850 p-1 border border-slate-700 rounded text-slate-400 line-through">Tanium</div>
+                                </div>
+                                <div class="bg-gradient-to-r from-emerald-600/20 to-teal-600/20 p-2.5 rounded-lg border border-emerald-500/20 text-center text-xs font-bold text-white">
+                                    Elastic Observability Platform
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 space-y-4 mt-6 md:mt-0">
+                            <span class="text-emerald-400 font-bold tracking-wider text-xs uppercase">Unified Solution Architecture</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Consolidated Telemetry via Elastic Search AI</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Real-time cross-platform correlation reduces manual context-switching.
+                                Machine-learning agents pinpoint root cause on active workloads, eliminating costly war room diagnostic latency.
+                            </p>
+                            <ul class="text-xs space-y-1.5 text-slate-300">
+                                <li class="flex items-center"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-2"></span> FedRAMP-aligned Elastic platform</li>
+                                <li class="flex items-center"><span class="h-1.5 w-1.5 rounded-full bg-emerald-400 mr-2"></span> Single-pane correlation of application, host, and endpoint logs</li>
+                            </ul>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 5: Driver 1 - Tool Consolidation
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-3">
+                            <span class="text-blue-400 font-bold tracking-wider text-xs uppercase">Value Driver #1</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Telemetry Tool Cost Consolidation</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Licensing and ingestion fees represent the largest baseline cost. Consolidation delivers immediate savings as legacy software contracts expire.
+                            </p>
+                            <div class="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">3-Year Cumulative Savings:</span>
+                                    <strong class="text-emerald-400 font-bold text-sm">$${formatMillions(outputs.driver1_3Yr)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 w-full space-y-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Year-by-Year Progression</h4>
+                            <div class="space-y-2">
+                                <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center text-xs">
+                                    <span>Year 1 Consolidation Savings (40%)</span>
+                                    <strong class="text-white">$${formatMillions(outputs.driver1_Yr1)}</strong>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center text-xs">
+                                    <span>Year 2 Consolidation Savings (55%)</span>
+                                    <strong class="text-white">$${formatMillions(outputs.driver1_Yr2)}</strong>
+                                </div>
+                                <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between items-center text-xs">
+                                    <span>Year 3 Consolidation Savings (65%)</span>
+                                    <strong class="text-emerald-400">$${formatMillions(outputs.driver1_Yr3)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 6: Driver 2 - MTTR
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-3">
+                            <span class="text-purple-400 font-bold tracking-wider text-xs uppercase">Value Driver #2</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Optimizing Outage Response Labor</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Siloed troubleshooting creates war room sprawl, wasting valuable engineering hours. Shared observability shortens detection time and reduces bridge call overhead.
+                            </p>
+                            <div class="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">3-Year MTTR / MTTD Savings:</span>
+                                    <strong class="text-emerald-400 font-bold text-sm">$${formatMillions(outputs.driver2_3Yr)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 w-full space-y-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Steady-State Outage Impact Transformation</h4>
+                            <div class="grid grid-cols-2 gap-3 text-center">
+                                <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                    <span class="block text-[10px] text-slate-400 uppercase">Current Bridge Staff</span>
+                                    <strong class="text-xl text-red-400 mt-1 block">${state.contractorsPerOutage} contractors</strong>
+                                </div>
+                                <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                    <span class="block text-[10px] text-emerald-400 uppercase">Elastic Bridge Staff</span>
+                                    <strong class="text-xl text-emerald-400 mt-1 block">${(state.contractorsPerOutage * 0.6).toFixed(1)} people</strong>
+                                </div>
+                                <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                    <span class="block text-[10px] text-slate-400 uppercase">Average Current MTTR</span>
+                                    <strong class="text-xl text-red-400 mt-1 block">${state.outageDurationHrs.toFixed(1)} hrs</strong>
+                                </div>
+                                <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                    <span class="block text-[10px] text-emerald-400 uppercase">Average Elastic MTTR</span>
+                                    <strong class="text-xl text-emerald-400 mt-1 block">${(state.outageDurationHrs * 0.5).toFixed(1)} hrs</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 7: Driver 3 - Alert Triage
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-3">
+                            <span class="text-amber-400 font-bold tracking-wider text-xs uppercase">Value Driver #3</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Reducing False Positive Noise</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Analysts lose valuable time chasing phantom alerts. Elastic filters out ambient noise, reclaiming critical engineering bandwidth for proactive development work.
+                            </p>
+                            <div class="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">3-Year Noise Reduction Value:</span>
+                                    <strong class="text-emerald-400 font-bold text-sm">$${formatMillions(outputs.driver3_3Yr)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 w-full space-y-2 text-xs">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Operational Improvements (Year 3)</h4>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Daily false alerts eliminated:</span>
+                                <strong class="text-white">${(state.dailyFalsePositives * 0.75).toFixed(0)} alerts/day</strong>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Annual contractor hours recovered:</span>
+                                <strong class="text-white">${formatNumber(Math.round(state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.75))} hours</strong>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Direct labor costs reclaimed:</span>
+                                <strong class="text-emerald-400">$${formatMillions(outputs.driver3_direct_Yr3)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 8: Driver 4 - Outage Prevention
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-3">
+                            <span class="text-rose-400 font-bold tracking-wider text-xs uppercase">Value Driver #4</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Outage Avoidance &amp; Prevention</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Machine learning anomaly engines identify indicators of degradation early, preventing active systems from crashing and protecting the agency's primary public-facing pipelines.
+                            </p>
+                            <div class="bg-slate-950/60 p-4 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-400">3-Year Total Cost Avoidance:</span>
+                                    <strong class="text-emerald-400 font-bold text-sm">$${formatMillions(outputs.driver4_3Yr)}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="md:w-1/2 w-full space-y-2 text-xs">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Annual Impact Savings (Year 3)</h4>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Simulated outages avoided:</span>
+                                <strong class="text-white">${(state.outagesPerYear * 0.20).toFixed(1)} outages/yr</strong>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Preventative mission value:</span>
+                                <strong class="text-white">$${formatMillions(state.outagesPerYear * 0.2 * state.outageDurationHrs * state.missionOutageCostHr)}</strong>
+                            </div>
+                            <div class="bg-slate-950 p-3 rounded border border-slate-800 flex justify-between">
+                                <span class="text-slate-400">Shortened outage duration value:</span>
+                                <strong class="text-emerald-400">$${formatMillions((state.outagesPerYear * 0.8) * (state.outageDurationHrs * 0.5) * state.missionOutageCostHr)}</strong>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 9: Cumulative Ledger
+                render: () => `
+                    <div class="w-full h-full flex flex-col justify-center">
+                        <h3 class="text-2xl font-extrabold text-white text-center mb-4">Cumulative 3-Year Return Ledger</h3>
+                        <div class="overflow-hidden border border-slate-800 rounded-xl bg-slate-950/40 max-w-3xl mx-auto w-full">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-900 text-slate-400 font-semibold border-b border-slate-800">
+                                    <tr>
+                                        <th class="p-3">Category</th>
+                                        <th class="p-3 text-right">Year 1</th>
+                                        <th class="p-3 text-right">Year 2</th>
+                                        <th class="p-3 text-right">Year 3</th>
+                                        <th class="p-3 text-right text-emerald-400">Total Return</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-850 text-slate-300">
+                                    <tr>
+                                        <td class="p-2.5 font-medium">Telemetry Tool Savings</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver1_Yr1))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver1_Yr2))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver1_Yr3))}</td>
+                                        <td class="p-2.5 text-right text-white">$${formatNumber(Math.round(outputs.driver1_3Yr))}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-medium">MTTR/MTTD Labor Savings</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver2_Yr1))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver2_Yr2))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver2_Yr3))}</td>
+                                        <td class="p-2.5 text-right text-white">$${formatNumber(Math.round(outputs.driver2_3Yr))}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2.5 font-medium">False Positive Noise Reduction</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver3_Yr1))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver3_Yr2))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver3_Yr3))}</td>
+                                        <td class="p-2.5 text-right text-white">$${formatNumber(Math.round(outputs.driver3_3Yr))}</td>
+                                    </tr>
+                                    <tr class="border-b border-slate-800">
+                                        <td class="p-2.5 font-medium">Proactive Outage Prevention</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver4_Yr1))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver4_Yr2))}</td>
+                                        <td class="p-2.5 text-right">$${formatNumber(Math.round(outputs.driver4_Yr3))}</td>
+                                        <td class="p-2.5 text-right text-white">$${formatNumber(Math.round(outputs.driver4_3Yr))}</td>
+                                    </tr>
+                                    <tr class="bg-slate-900/40 text-xs font-semibold">
+                                        <td class="p-3 text-white">Cumulative Gross Return</td>
+                                        <td class="p-3 text-right text-white">$${formatNumber(Math.round(outputs.totalBenefitsYr1))}</td>
+                                        <td class="p-3 text-right text-white">$${formatNumber(Math.round(outputs.totalBenefitsYr2))}</td>
+                                        <td class="p-3 text-right text-white">$${formatNumber(Math.round(outputs.totalBenefitsYr3))}</td>
+                                        <td class="p-3 text-right text-emerald-400">$${formatNumber(Math.round(outputs.totalBenefits3Yr))}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 10: Operational Beyond Dollars
+                render: () => `
+                    <div class="w-full h-full flex flex-col justify-center max-w-4xl mx-auto">
+                        <div class="text-center mb-6">
+                            <span class="text-emerald-400 font-bold text-xs uppercase">Operational Metrics</span>
+                            <h3 class="text-2xl font-extrabold text-white mt-1">Operational Evolution (Beyond Dollars)</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Daily Incident Alerts</span>
+                                <div class="my-3">
+                                    <span class="text-3xl font-extrabold text-amber-400">20 alerts</span>
+                                    <span class="text-xs block text-slate-500 mt-1">Down from ${state.dailyFalsePositives} alerts</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">75% noise filter rate</span>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Average System MTTR</span>
+                                <div class="my-3">
+                                    <span class="text-3xl font-extrabold text-rose-400">3.0 hours</span>
+                                    <span class="text-xs block text-slate-500 mt-1">Down from ${state.outageDurationHrs.toFixed(1)} hours</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">50% faster service recovery</span>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Bridge Call Engineering Time</span>
+                                <div class="my-3">
+                                    <span class="text-3xl font-extrabold text-blue-400">13 contractors</span>
+                                    <span class="text-xs block text-slate-500 mt-1">Down from ${state.contractorsPerOutage} engineers</span>
+                                </div>
+                                <span class="text-[10px] text-slate-400">Frees bandwidth for mission work</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 11: Mission Outcomes
+                render: () => `
+                    <div class="w-full flex flex-col md:flex-row md:space-x-8 items-center max-w-4xl mx-auto">
+                        <div class="md:w-1/2 space-y-3">
+                            <span class="text-emerald-400 font-bold tracking-wider text-xs uppercase">FCC FY2026 Strategic Alignment</span>
+                            <h2 class="text-2xl font-extrabold text-white leading-tight">Securing the National Communications Infrastructure</h2>
+                            <p class="text-sm text-slate-300 leading-relaxed">
+                                Observability is not simply an IT optimization metric. System resilience directly protects core agency commitments:
+                            </p>
+                        </div>
+                        <div class="md:w-1/2 w-full space-y-3 text-xs">
+                            <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                <strong class="text-blue-400 block font-semibold mb-1">Broadband Delivery & Spectrum Auctions</strong>
+                                <span class="text-slate-300 leading-relaxed">ULS, IBFS, and SMRA networks remain online, preventing regulatory licensing delays and licensing backlogs.</span>
+                            </div>
+                            <div class="bg-slate-950 p-3.5 rounded border border-slate-800">
+                                <strong class="text-emerald-400 block font-semibold mb-1">National Public Safety Communications</strong>
+                                <span class="text-slate-300 leading-relaxed">Shielding regional alert monitors (NORS, DIRS, ETRS) ensuring prompt outage notification and first responder synchronization.</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            },
+            {
+                // Slide 12: Next Steps
+                render: () => `
+                    <div class="w-full h-full flex flex-col justify-center max-w-4xl mx-auto">
+                        <div class="text-center mb-6">
+                            <span class="text-blue-400 font-bold tracking-wider text-xs uppercase">Moving Forward</span>
+                            <h2 class="text-3xl font-extrabold text-white leading-tight">Suggested Next Operational Milestones</h2>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-blue-400 font-bold text-sm block mb-1">1. Exec Alignment</span>
+                                <p class="text-slate-300 leading-relaxed mb-4">Confirm sponsorship with Deputy CIO Don Tweedy; align target funding schedule and compliance timelines.</p>
+                                <span class="text-[10px] text-slate-500 uppercase font-bold block">Target: June 2026</span>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-emerald-400 font-bold text-sm block mb-1">2. Data Verification</span>
+                                <p class="text-slate-300 leading-relaxed mb-4">Verify baseline software expenditures (Dynatrace, Splunk, SolarWinds, Tanium) with FCC Operations.</p>
+                                <span class="text-[10px] text-slate-500 uppercase font-bold block">Target: July 2026</span>
+                            </div>
+                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                                <span class="text-purple-400 font-bold text-sm block mb-1">3. Mission KPI Workshop</span>
+                                <p class="text-slate-300 leading-relaxed mb-4">Host technical session mapping Elastic machine learning alerts directly to spectrum pipeline objectives.</p>
+                                <span class="text-[10px] text-slate-500 uppercase font-bold block">Target: August 2026</span>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        ];
+
+        // Calculated model outputs structure
+        let outputs = {};
+
+        // References to chart objects to enable updates
+        let chartFinancialsObj = null;
+        let chartPieDriversObj = null;
+
+        /**
+         * Core Calculation Engine of the Business Value Model
+         */
+        function calculateModel() {
+            const annualToolSpend = state.spendSplunk * 1000 + state.spendDynatrace * 1000 + state.spendSolarWinds * 1000 + state.spendTanium * 1000;
+            
+            // Driver 1: Tool Consolidation Savings
+            const driver1_Yr1 = annualToolSpend * 0.40;
+            const driver1_Yr2 = annualToolSpend * 0.55;
+            const driver1_Yr3 = annualToolSpend * 0.65;
+            const driver1_3Yr = driver1_Yr1 + driver1_Yr2 + driver1_Yr3;
+
+            // Driver 2: MTTR / MTTD Labor Savings
+            const currentLaborCost = state.outagesPerYear * state.contractorsPerOutage * state.outageDurationHrs * state.loadedHourlyRate;
+            
+            // Future Year 1 Outages: 15% contractors red, 25% duration red
+            const yr1OutageCost = state.outagesPerYear * (state.contractorsPerOutage * 0.85) * (state.outageDurationHrs * 0.75) * state.loadedHourlyRate;
+            const yr1OutageLaborSavings = currentLaborCost - yr1OutageCost;
+            // MTTD Year 1: 40% reduction on 1.5 hr detection baseline, 22 contractors
+            const yr1MttdSavings = state.outagesPerYear * (1.5 * 0.40) * state.contractorsPerOutage * state.loadedHourlyRate;
+            const driver2_Yr1 = yr1OutageLaborSavings + yr1MttdSavings;
+
+            // Future Year 2 Outages: 30% contractors red, 40% duration red
+            const yr2OutageCost = state.outagesPerYear * (state.contractorsPerOutage * 0.70) * (state.outageDurationHrs * 0.60) * state.loadedHourlyRate;
+            const yr2OutageLaborSavings = currentLaborCost - yr2OutageCost;
+            // MTTD Year 2: 55% reduction on 1.5 hr detection baseline, 22 contractors
+            const yr2MttdSavings = state.outagesPerYear * (1.5 * 0.55) * state.contractorsPerOutage * state.loadedHourlyRate;
+            const driver2_Yr2 = yr2OutageLaborSavings + yr2MttdSavings;
+
+            // Future Year 3 Outages: 40% contractors red, 50% duration red
+            const yr3OutageCost = state.outagesPerYear * (state.contractorsPerOutage * 0.60) * (state.outageDurationHrs * 0.50) * state.loadedHourlyRate;
+            const yr3OutageLaborSavings = currentLaborCost - yr3OutageCost;
+            // MTTD Year 3: 65% reduction on 1.5 hr detection baseline, 22 contractors
+            const yr3MttdSavings = state.outagesPerYear * (1.5 * 0.65) * state.contractorsPerOutage * state.loadedHourlyRate;
+            const driver2_Yr3 = yr3OutageLaborSavings + yr3MttdSavings;
+
+            const driver2_3Yr = driver2_Yr1 + driver2_Yr2 + driver2_Yr3;
+
+            // Driver 3: False Positive Alert Reduction
+            const currentFpCost = state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * state.loadedHourlyRate;
+            
+            // Yr 1: 50% reduction, 50% productivty uplift
+            const driver3_direct_Yr1 = currentFpCost * 0.50;
+            const hoursReclaimedYr1 = state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.50;
+            const driver3_uplift_Yr1 = hoursReclaimedYr1 * state.loadedHourlyRate * 0.50;
+            const driver3_Yr1 = driver3_direct_Yr1 + driver3_uplift_Yr1;
+
+            // Yr 2: 65% reduction, 60% productivty uplift
+            const driver3_direct_Yr2 = currentFpCost * 0.65;
+            const hoursReclaimedYr2 = state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.65;
+            const driver3_uplift_Yr2 = hoursReclaimedYr2 * state.loadedHourlyRate * 0.60;
+            const driver3_Yr2 = driver3_direct_Yr2 + driver3_uplift_Yr2;
+
+            // Yr 3: 75% reduction, 70% productivty uplift
+            const driver3_direct_Yr3 = currentFpCost * 0.75;
+            const hoursReclaimedYr3 = state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.75;
+            const driver3_uplift_Yr3 = hoursReclaimedYr3 * state.loadedHourlyRate * 0.70;
+            const driver3_Yr3 = driver3_direct_Yr3 + driver3_uplift_Yr3;
+
+            const driver3_3Yr = driver3_Yr1 + driver3_Yr2 + driver3_Yr3;
+
+            // Driver 4: Mission Outage Avoidance & Impact Prevention
+            // Yr 1: 10% outages avoided, 25% duration reduction on remainder
+            const outagesAvoidedYr1 = state.outagesPerYear * 0.10;
+            const avoidanceYr1Val = outagesAvoidedYr1 * state.outageDurationHrs * state.missionOutageCostHr;
+            const remainingYr1Outages = state.outagesPerYear - outagesAvoidedYr1;
+            const durationSavedYr1 = state.outageDurationHrs * 0.25;
+            const shortenedYr1Val = remainingYr1Outages * durationSavedYr1 * state.missionOutageCostHr;
+            const driver4_Yr1 = avoidanceYr1Val + shortenedYr1Val;
+
+            // Yr 2: 15% outages avoided, 40% duration reduction on remainder
+            const outagesAvoidedYr2 = state.outagesPerYear * 0.15;
+            const avoidanceYr2Val = outagesAvoidedYr2 * state.outageDurationHrs * state.missionOutageCostHr;
+            const remainingYr2Outages = state.outagesPerYear - outagesAvoidedYr2;
+            const durationSavedYr2 = state.outageDurationHrs * 0.40;
+            const shortenedYr2Val = remainingYr2Outages * durationSavedYr2 * state.missionOutageCostHr;
+            const driver4_Yr2 = avoidanceYr2Val + shortenedYr2Val;
+
+            // Yr 3: 20% outages avoided, 50% duration reduction on remainder
+            const outagesAvoidedYr3 = state.outagesPerYear * 0.20;
+            const avoidanceYr3Val = outagesAvoidedYr3 * state.outageDurationHrs * state.missionOutageCostHr;
+            const remainingYr3Outages = state.outagesPerYear - outagesAvoidedYr3;
+            const durationSavedYr3 = state.outageDurationHrs * 0.50;
+            const shortenedYr3Val = remainingYr3Outages * durationSavedYr3 * state.missionOutageCostHr;
+            const driver4_Yr3 = avoidanceYr3Val + shortenedYr3Val;
+
+            const driver4_3Yr = driver4_Yr1 + driver4_Yr2 + driver4_Yr3;
+
+            // Total Gross Benefits
+            const totalBenefitsYr1 = driver1_Yr1 + driver2_Yr1 + driver3_Yr1 + driver4_Yr1;
+            const totalBenefitsYr2 = driver1_Yr2 + driver2_Yr2 + driver3_Yr2 + driver4_Yr2;
+            const totalBenefitsYr3 = driver1_Yr3 + driver2_Yr3 + driver3_Yr3 + driver4_Yr3;
+            const totalBenefits3Yr = totalBenefitsYr1 + totalBenefitsYr2 + totalBenefitsYr3;
+
+            // Proposed Investments
+            const investYr1 = (state.elasticLicenseYr1 * 1000) + (state.elasticServicesYr1 * 1000);
+            const investYr2 = (state.elasticLicenseYr1 * 1000) * 1.03; // Conservative annual increase index
+            const investYr3 = (state.elasticLicenseYr1 * 1000) * 1.0609; // 3% compounded
+            const totalInvest3Yr = investYr1 + investYr2 + investYr3;
+
+            // Final Returns Metrics
+            const netBenefit = totalBenefits3Yr - totalInvest3Yr;
+            const roi = (netBenefit / totalInvest3Yr) * 100;
+            const benefitCostRatio = totalBenefits3Yr / totalInvest3Yr;
+            
+            // Break-even Payback index
+            const year1Net = totalBenefitsYr1 - investYr1;
+            let paybackPeriod = 0;
+            if (year1Net > 0) {
+                paybackPeriod = (investYr1 / totalBenefitsYr1) * 12;
+            } else {
+                paybackPeriod = 12 + ((investYr1 - totalBenefitsYr1) / totalBenefitsYr2) * 12;
+            }
+
+            outputs = {
+                driver1_Yr1, driver1_Yr2, driver1_Yr3, driver1_3Yr,
+                driver2_Yr1, driver2_Yr2, driver2_Yr3, driver2_3Yr,
+                driver3_Yr1, driver3_Yr2, driver3_Yr3, driver3_3Yr,
+                driver4_Yr1, driver4_Yr2, driver4_Yr3, driver4_3Yr,
+                driver3_direct_Yr3,
+                totalBenefitsYr1, totalBenefitsYr2, totalBenefitsYr3, totalBenefits3Yr,
+                investYr1, investYr2, investYr3, totalInvest3Yr,
+                netBenefit, roi, paybackPeriod, benefitCostRatio
+            };
+        }
+
+        /**
+         * Refreshes dashboard values and triggers chart re-draws
+         */
+        function updateModel() {
+            // Read inputs from DOM and write back numbers
+            state.outagesPerYear = parseInt(document.getElementById('input-outagesPerYear').value);
+            state.contractorsPerOutage = parseInt(document.getElementById('input-contractorsPerOutage').value);
+            state.outageDurationHrs = parseFloat(document.getElementById('input-outageDurationHrs').value);
+            state.missionOutageCostHr = parseInt(document.getElementById('input-missionOutageCostHr').value);
+            state.dailyFalsePositives = parseInt(document.getElementById('input-dailyFalsePositives').value);
+            state.minutesPerFP = parseInt(document.getElementById('input-minutesPerFP').value);
+            state.loadedHourlyRate = parseInt(document.getElementById('input-loadedHourlyRate').value);
+
+            state.spendSplunk = parseInt(document.getElementById('input-spendSplunk').value);
+            state.spendTanium = parseInt(document.getElementById('input-spendTanium').value);
+            state.spendDynatrace = parseInt(document.getElementById('input-spendDynatrace').value);
+            state.spendSolarWinds = parseInt(document.getElementById('input-spendSolarWinds').value);
+
+            state.elasticLicenseYr1 = parseInt(document.getElementById('input-elasticLicenseYr1').value);
+            state.elasticServicesYr1 = parseInt(document.getElementById('input-elasticServicesYr1').value);
+
+            // Synchronize control panel labels
+            document.getElementById('val-outagesPerYear').textContent = state.outagesPerYear;
+            document.getElementById('val-contractorsPerOutage').textContent = state.contractorsPerOutage;
+            document.getElementById('val-outageDurationHrs').textContent = state.outageDurationHrs.toFixed(1);
+            document.getElementById('val-missionOutageCostHr').textContent = '$' + formatNumber(state.missionOutageCostHr);
+            document.getElementById('val-dailyFalsePositives').textContent = state.dailyFalsePositives;
+            document.getElementById('val-minutesPerFP').textContent = state.minutesPerFP;
+            document.getElementById('val-loadedHourlyRate').textContent = '$' + state.loadedHourlyRate;
+            
+            document.getElementById('val-spendSplunk').textContent = '$' + formatNumber(state.spendSplunk) + 'K';
+            document.getElementById('val-spendTanium').textContent = '$' + formatNumber(state.spendTanium) + 'K';
+            document.getElementById('val-spendDynatrace').textContent = '$' + formatNumber(state.spendDynatrace) + 'K';
+            document.getElementById('val-spendSolarWinds').textContent = '$' + formatNumber(state.spendSolarWinds) + 'K';
+
+            document.getElementById('val-elasticLicenseYr1').textContent = '$' + formatNumber(state.elasticLicenseYr1) + 'K';
+            document.getElementById('val-elasticServicesYr1').textContent = '$' + formatNumber(state.elasticServicesYr1) + 'K';
+
+            // Run math engine
+            calculateModel();
+
+            // Render output values to key elements
+            document.getElementById('metric-netBenefit').textContent = '$' + formatMillions(outputs.netBenefit);
+            document.getElementById('metric-roi').textContent = formatPct(outputs.roi);
+            document.getElementById('metric-payback').textContent = outputs.paybackPeriod.toFixed(1) + ' Months';
+            document.getElementById('metric-bcr').textContent = outputs.benefitCostRatio.toFixed(1) + 'x';
+
+            // Driver cards
+            document.getElementById('driver1-badge').textContent = '$' + formatMillions(outputs.driver1_3Yr) + ' Saved';
+            document.getElementById('driver2-badge').textContent = '$' + formatMillions(outputs.driver2_3Yr) + ' Saved';
+            document.getElementById('driver3-badge').textContent = '$' + formatMillions(outputs.driver3_3Yr) + ' Value';
+            document.getElementById('driver4-badge').textContent = '$' + formatMillions(outputs.driver4_3Yr) + ' Saved';
+
+            document.getElementById('val-driver1-splunk').textContent = '$' + formatNumber(Math.round(state.spendSplunk * 1000 * 0.85)); // Year 3 Splunk savings reference
+            document.getElementById('val-driver1-dynatrace').textContent = '$' + formatNumber(Math.round(state.spendDynatrace * 1000 * 0.70));
+            document.getElementById('val-driver1-tanium').textContent = '$' + formatNumber(Math.round(state.spendTanium * 1000 * 0.30));
+            document.getElementById('val-driver1-solarwinds').textContent = '$' + formatNumber(Math.round(state.spendSolarWinds * 1000 * 0.80));
+
+            document.getElementById('val-driver2-headcount-now').textContent = state.contractorsPerOutage;
+            document.getElementById('val-driver2-headcount-future').textContent = (state.contractorsPerOutage * 0.6).toFixed(1);
+            document.getElementById('val-driver2-duration-now').textContent = state.outageDurationHrs.toFixed(1) + ' hrs';
+            document.getElementById('val-driver2-duration-future').textContent = (state.outageDurationHrs * 0.5).toFixed(1) + ' hrs';
+
+            document.getElementById('val-driver3-hours').textContent = formatNumber(Math.round(state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.75)) + ' hours';
+            document.getElementById('val-driver3-direct').textContent = '$' + formatNumber(Math.round(outputs.driver3_direct_Yr3));
+            document.getElementById('val-driver3-uplift').textContent = '$' + formatNumber(Math.round(state.dailyFalsePositives * (state.minutesPerFP / 60) * 365 * 0.75 * state.loadedHourlyRate * 0.70));
+
+            document.getElementById('val-driver4-avoided').textContent = (state.outagesPerYear * 0.20).toFixed(1) + ' outages';
+            document.getElementById('val-driver4-hours-saved').textContent = ((state.outagesPerYear * 0.2 * state.outageDurationHrs) + ((state.outagesPerYear * 0.8) * (state.outageDurationHrs * 0.5))).toFixed(1) + ' hrs';
+
+            // Update Operational Tab Card variables
+            document.getElementById('val-ops-alerts-reduct').textContent = '75%';
+            document.getElementById('val-ops-alerts-day').textContent = Math.round(state.dailyFalsePositives * 0.25);
+            document.getElementById('val-ops-alerts-prev').textContent = state.dailyFalsePositives;
+            
+            document.getElementById('val-ops-mttr-reduct').textContent = '50%';
+            document.getElementById('val-ops-mttr-now').textContent = state.outageDurationHrs.toFixed(1) + ' hrs';
+            document.getElementById('val-ops-mttr-future').textContent = (state.outageDurationHrs * 0.5).toFixed(1) + ' hrs';
+
+            document.getElementById('val-ops-labor-reduct').textContent = '40%';
+            document.getElementById('val-ops-contractors-now').textContent = state.contractorsPerOutage;
+            document.getElementById('val-ops-contractors-future').textContent = Math.round(state.contractorsPerOutage * 0.6);
+
+            // Rebuild financial ledger rows
+            renderFinancialLedger();
+
+            // Refresh Charts
+            renderCharts();
+
+            // Sync slide Deck items if showing
+            if (document.getElementById('deck-view').classList.contains('hidden') === false) {
+                renderActiveSlide();
+            }
+
+            // Sync Simulator Values
+            updateActiveSimulation();
+        }
+
+        /**
+         * Recreates visual ledger details dynamically
+         */
+        function renderFinancialLedger() {
+            const body = document.getElementById('financial-ledger-body');
+            body.innerHTML = '';
+
+            const format = (val) => '$' + formatNumber(Math.round(val));
+
+            const rows = [
+                { name: "Value Driver 1: Tool Consolidation Savings", yr1: outputs.driver1_Yr1, yr2: outputs.driver1_Yr2, yr3: outputs.driver1_Yr3, total: outputs.driver1_3Yr, bold: false },
+                { name: "Value Driver 2: MTTR / MTTD Labor Recovery", yr1: outputs.driver2_Yr1, yr2: outputs.driver2_Yr2, yr3: outputs.driver2_Yr3, total: outputs.driver2_3Yr, bold: false },
+                { name: "Value Driver 3: False Positive Noise reduction", yr1: outputs.driver3_Yr1, yr2: outputs.driver3_Yr2, yr3: outputs.driver3_Yr3, total: outputs.driver3_3Yr, bold: false },
+                { name: "Value Driver 4: Proactive Outage Prevention", yr1: outputs.driver4_Yr1, yr2: outputs.driver4_Yr2, yr3: outputs.driver4_Yr3, total: outputs.driver4_3Yr, bold: false },
+                { name: "Total Estimated Gross Benefits", yr1: outputs.totalBenefitsYr1, yr2: outputs.totalBenefitsYr2, yr3: outputs.totalBenefitsYr3, total: outputs.totalBenefits3Yr, bold: true, bg: "bg-slate-900/50" },
+                { name: "Proposed Elastic Platform Investment", yr1: outputs.investYr1, yr2: outputs.investYr2, yr3: outputs.investYr3, total: outputs.totalInvest3Yr, bold: false, color: "text-rose-400" },
+                { name: "Cumulative Operational Net Profit", yr1: outputs.totalBenefitsYr1 - outputs.investYr1, yr2: (outputs.totalBenefitsYr1 + outputs.totalBenefitsYr2) - (outputs.investYr1 + outputs.investYr2), yr3: outputs.netBenefit, total: outputs.netBenefit, bold: true, bg: "bg-emerald-950/20", color: "text-emerald-400" }
+            ];
+
+            rows.forEach(r => {
+                const tr = document.createElement('tr');
+                if (r.bg) tr.className = r.bg;
+                if (r.bold) tr.className += ' font-semibold border-t border-slate-700';
+
+                tr.innerHTML = `
+                    <td class="p-4 text-slate-200">${r.name}</td>
+                    <td class="p-4 text-right ${r.color || 'text-slate-300'}">${format(r.yr1)}</td>
+                    <td class="p-4 text-right ${r.color || 'text-slate-300'}">${format(r.yr2)}</td>
+                    <td class="p-4 text-right ${r.color || 'text-slate-300'}">${format(r.yr3)}</td>
+                    <td class="p-4 text-right font-extrabold ${r.color || 'text-sky-400'}">${format(r.total)}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        /**
+         * Scenario Presets Quick Configurer
+         */
+        function applyPreset(presetName) {
+            if (presetName === 'conservative') {
+                state = JSON.parse(JSON.stringify(defaults));
+            } else if (presetName === 'pessimistic') {
+                // Reduces outage scale and cost index to test safety baseline
+                state = JSON.parse(JSON.stringify(defaults));
+                state.missionOutageCostHr = 40000;
+                state.outagesPerYear = 15;
+                state.dailyFalsePositives = 50;
+            } else if (presetName === 'cisco') {
+                // Aligns properties to Forrester Cisco FSO reports (65% consolidation)
+                state = JSON.parse(JSON.stringify(defaults));
+                state.spendSplunk = 2600;
+                state.spendDynatrace = 600;
+            } else if (presetName === 'elastic') {
+                // Aligns to best case Elastic parameters (85% reduction metrics)
+                state = JSON.parse(JSON.stringify(defaults));
+                state.spendSplunk = 3000;
+                state.spendTanium = 1800;
+                state.dailyFalsePositives = 110;
+            }
+
+            // Sync inputs to match new state
+            document.getElementById('input-outagesPerYear').value = state.outagesPerYear;
+            document.getElementById('input-contractorsPerOutage').value = state.contractorsPerOutage;
+            document.getElementById('input-outageDurationHrs').value = state.outageDurationHrs;
+            document.getElementById('input-missionOutageCostHr').value = state.missionOutageCostHr;
+            document.getElementById('input-dailyFalsePositives').value = state.dailyFalsePositives;
+            document.getElementById('input-minutesPerFP').value = state.minutesPerFP;
+            document.getElementById('input-loadedHourlyRate').value = state.loadedHourlyRate;
+
+            document.getElementById('input-spendSplunk').value = state.spendSplunk;
+            document.getElementById('input-spendTanium').value = state.spendTanium;
+            document.getElementById('input-spendDynatrace').value = state.spendDynatrace;
+            document.getElementById('input-spendSolarWinds').value = state.spendSolarWinds;
+
+            document.getElementById('input-elasticLicenseYr1').value = state.elasticLicenseYr1;
+            document.getElementById('input-elasticServicesYr1').value = state.elasticServicesYr1;
+
+            updateModel();
+        }
+
+        /**
+         * Chart Render & Config Handler
+         */
+        function renderCharts() {
+            // Build / Update TCO Bar Chart
+            const ctxFin = document.getElementById('chart-financials').getContext('2d');
+            
+            const financialData = {
+                labels: ['Year 1', 'Year 2', 'Year 3'],
+                datasets: [
+                    {
+                        label: 'Gross Realized Value ($)',
+                        backgroundColor: '#0284c7', // sky-600
+                        data: [outputs.totalBenefitsYr1, outputs.totalBenefitsYr2, outputs.totalBenefitsYr3]
+                    },
+                    {
+                        label: 'Elastic Total Investment ($)',
+                        backgroundColor: '#ef4444', // red-500
+                        data: [outputs.investYr1, outputs.investYr2, outputs.investYr3]
+                    }
+                ]
+            };
+
+            if (chartFinancialsObj) {
+                chartFinancialsObj.data = financialData;
+                chartFinancialsObj.update();
+            } else {
+                chartFinancialsObj = new Chart(ctxFin, {
+                    type: 'bar',
+                    data: financialData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: { color: '#94a3b8' }
+                            }
+                        },
+                        scales: {
+                            x: { grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                            y: { grid: { color: '#334155' }, ticks: { color: '#94a3b8', callback: (v) => '$' + formatMillions(v) } }
+                        }
+                    }
+                });
+            }
+
+            // Build / Update Driver Pie Chart
+            const ctxPie = document.getElementById('chart-pie-drivers').getContext('2d');
+            const pieData = {
+                labels: ['Consolidation', 'Labor Savings', 'Noise reduction', 'Prevention'],
+                datasets: [{
+                    data: [outputs.driver1_3Yr, outputs.driver2_3Yr, outputs.driver3_3Yr, outputs.driver4_3Yr],
+                    backgroundColor: ['#3b82f6', '#a855f7', '#f59e0b', '#f43f5e']
+                }]
+            };
+
+            if (chartPieDriversObj) {
+                chartPieDriversObj.data = pieData;
+                chartPieDriversObj.update();
+            } else {
+                chartPieDriversObj = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: pieData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#94a3b8', font: { size: 10 } }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        /**
+         * Navigation Tab Handler
+         */
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Remove active style from all tab buttons
+            document.querySelectorAll('[id^="btn-tab-"]').forEach(el => {
+                el.classList.remove('border-blue-500', 'text-blue-400');
+                el.classList.add('border-transparent', 'text-slate-400', 'hover:text-white');
+            });
+
+            // Show selected tab content
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Style active tab button
+            const activeBtn = document.getElementById('btn-tab-' + tabId.split('-')[1]);
+            if (activeBtn) {
+                activeBtn.classList.remove('border-transparent', 'text-slate-400', 'hover:text-white');
+                activeBtn.classList.add('border-blue-500', 'text-blue-400');
+            }
+        }
+
+        /**
+         * Toggle View between Dashboard and Briefing Deck Mode
+         */
+        function switchView(viewName) {
+            const dashboard = document.getElementById('dashboard-view');
+            const deck = document.getElementById('deck-view');
+            const navDashboard = document.getElementById('nav-dashboard');
+            const navDeck = document.getElementById('nav-deck');
+
+            if (viewName === 'dashboard') {
+                deck.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+
+                // Style active state buttons
+                navDeck.className = "px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all";
+                navDashboard.className = "px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white transition-all shadow-md";
+            } else {
+                dashboard.classList.add('hidden');
+                deck.classList.remove('hidden');
+
+                navDashboard.className = "px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-all";
+                navDeck.className = "px-4 py-2 rounded-lg text-sm font-semibold flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white transition-all shadow-md";
+
+                // Setup slideshow initial state
+                renderActiveSlide();
+            }
+        }
+
+        /**
+         * Reset Inputs to Defaults config
+         */
+        function resetDefaults() {
+            state = JSON.parse(JSON.stringify(defaults));
+            applyPreset('conservative');
+        }
+
+        /**
+         * Slide Deck Render Mechanism
+         */
+        function renderActiveSlide() {
+            const slide = slides[currentSlideIndex];
+            const tracker = document.getElementById('deck-slide-tracker');
+            const container = document.getElementById('deck-slide-content');
+
+            tracker.textContent = `Slide ${currentSlideIndex + 1} of ${slides.length}`;
+            
+            // Fade-out and fade-in content smoothly
+            container.style.opacity = '0';
+            setTimeout(() => {
+                container.innerHTML = slide.render();
+                container.style.opacity = '1';
+            }, 150);
+        }
+
+        /**
+         * Adjust Current slide
+         */
+        function changeSlide(direction) {
+            currentSlideIndex += direction;
+            
+            if (currentSlideIndex < 0) {
+                currentSlideIndex = slides.length - 1;
+            } else if (currentSlideIndex >= slides.length) {
+                currentSlideIndex = 0;
+            }
+
+            renderActiveSlide();
+        }
+
+        /**
+         * Keyboard support for Slide Presentation
+         */
+        document.addEventListener('keydown', (e) => {
+            if (document.getElementById('deck-view').classList.contains('hidden') === false) {
+                if (e.key === 'ArrowRight' || e.key === ' ') {
+                    changeSlide(1);
+                    e.preventDefault();
+                } else if (e.key === 'ArrowLeft') {
+                    changeSlide(-1);
+                    e.preventDefault();
+                }
+            }
+        });
+
+        /**
+         * Outage Simulator Interface controller
+         */
+        function selectSimSystem(systemId) {
+            selectedSystemId = systemId;
+            
+            // Toggle active state visuals on system selector buttons
+            const grid = document.getElementById('simulator-systems-grid');
+            grid.querySelectorAll('button').forEach(btn => {
+                btn.className = "p-4 rounded-xl border border-slate-800 text-left bg-slate-900 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-transparent";
+            });
+
+            const activeBtn = document.getElementById('btn-sim-' + systemId);
+            if (activeBtn) {
+                activeBtn.className = "p-4 rounded-xl border border-blue-500 text-left bg-slate-950 hover:border-blue-500 transition-all focus:outline-none ring-2 ring-blue-500/50";
+            }
+
+            // Populate output elements
+            document.getElementById('simulation-output').classList.remove('hidden');
+            updateActiveSimulation();
+        }
+
+        /**
+         * Updates dynamic properties on the selected simulation box
+         */
+        function updateActiveSimulation() {
+            const sys = fccSystems[selectedSystemId];
+            if (!sys) return;
+
+            document.getElementById('sim-active-title').textContent = sys.title;
+            document.getElementById('sim-active-desc').textContent = sys.desc;
+            document.getElementById('sim-active-consequence').textContent = sys.consequence;
+
+            // Mathematical references scaling
+            document.getElementById('sim-current-mttd').textContent = "1.5 hours";
+            document.getElementById('sim-current-contractors').textContent = state.contractorsPerOutage + " contractors";
+            document.getElementById('sim-current-mttr').textContent = state.outageDurationHrs.toFixed(1) + " hours";
+            
+            // Current State Loss formulation: Dur * Cost/Hr + Labor components
+            const baselineLaborCost = state.contractorsPerOutage * state.outageDurationHrs * state.loadedHourlyRate;
+            const baselineMissionCost = state.outageDurationHrs * state.missionOutageCostHr;
+            const currentTotalLoss = baselineLaborCost + baselineMissionCost;
+            document.getElementById('sim-current-loss').textContent = '$' + formatNumber(Math.round(currentTotalLoss));
+
+            // Future State Calculations (scaled dynamically)
+            const elasticMttd = 1.5 * 0.35; // 65% detection reduction
+            const elasticContractors = state.contractorsPerOutage * 0.60; // 40% contractor bridge reduction
+            const elasticMttr = state.outageDurationHrs * 0.50; // 50% MTTR reduction
+
+            document.getElementById('sim-elastic-mttd').textContent = elasticMttd.toFixed(1) + " hours";
+            document.getElementById('sim-elastic-contractors').textContent = elasticContractors.toFixed(1) + " contractors";
+            document.getElementById('sim-elastic-mttr').textContent = elasticMttr.toFixed(1) + " hours";
+
+            const futureLaborCost = elasticContractors * elasticMttr * state.loadedHourlyRate;
+            const futureMissionCost = elasticMttr * state.missionOutageCostHr;
+            const futureTotalLoss = futureLaborCost + futureMissionCost;
+            
+            document.getElementById('sim-elastic-loss').textContent = '$' + formatNumber(Math.round(futureTotalLoss));
+            
+            const savedSum = currentTotalLoss - futureTotalLoss;
+            document.getElementById('sim-elastic-savings-note').textContent = "Savings: $" + formatNumber(Math.round(savedSum));
+        }
+
+        // Formatting utilities
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\digit))/g, ",");
+        }
+
+        function formatMillions(num) {
+            const millions = num / 1000000;
+            return millions.toFixed(2) + 'M';
+        }
+
+        function formatPct(num) {
+            return Math.round(num).toLocaleString() + '%';
+        }
+
+        // Window load initial bootstrap
+        window.onload = function() {
+            calculateModel();
+            updateModel();
+            
+            // Select default simulator item
+            selectSimSystem('auctions');
+        }
+    </script>
+</body>
+</html>
